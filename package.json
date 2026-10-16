@@ -3,27 +3,43 @@
   "version": "1.0.0",
   "description": "Trợ lý livestream TikTok: đọc comment, dịch, gợi ý trả lời, cảm ơn quà bằng TTS",
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning --import tsx src/server.ts",
-    "dev": "node --disable-warning=ExperimentalWarning --import tsx --watch src/server.ts",
-    "typecheck": "tsc --noEmit"
+    "start": "vite build --logLevel warn && node --disable-warning=ExperimentalWarning --import tsx src/server.ts",
+    "dev": "concurrently -k -n api,web -c magenta,cyan \"node --disable-warning=ExperimentalWarning --import tsx --watch src/server.ts\" \"vite\"",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web",
+    "build": "vite build",
+    "serve": "node --disable-warning=ExperimentalWarning --import tsx src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource/be-vietnam-pro": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "google-tts-api": "^2.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sonner": "^2.0.8",
     "tiktok-live-connector": "^2.5.0",
-    "ws": "^8.22.0"
+    "ws": "^8.22.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@types/ws": "^8.18.2",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
   },
   "engines": {
     "node": ">=22.5"

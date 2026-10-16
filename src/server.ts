@@ -1,5 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { join } from 'node:path';
 import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -11,7 +13,9 @@ import { synthesize } from './tts.js';
 
 const app = express();
 app.use(express.json({ limit: '100kb' }));
-app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
+const webDir = fileURLToPath(new URL('../dist/web', import.meta.url));
+const hasWebBuild = existsSync(join(webDir, 'index.html'));
+app.use(express.static(webDir, { index: 'index.html' }));
 
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -114,6 +118,11 @@ app.delete(
   }),
 );
 
+app.get(/^\/(?!api\/|ws).*/, (_req, res) => {
+  if (hasWebBuild) res.sendFile(join(webDir, 'index.html'));
+  else res.status(503).type('text').send('Chưa build giao diện. Chạy: npm run build');
+});
+
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const message = err instanceof Error ? err.message : String(err);
   console.warn('[api]', message);
@@ -131,6 +140,7 @@ server.listen(config.port, config.host, () => {
   console.log('\n  TikCom đang chạy:');
   console.log(`  • Trên máy này:      http://localhost:${config.port}`);
   for (const ip of lanAddresses()) console.log(`  • Thiết bị cùng Wi-Fi: http://${ip}:${config.port}`);
+  if (!hasWebBuild) console.log('\n  ⚠ Chưa build giao diện — chạy `npm run build` (hoặc `npm run dev` khi phát triển).');
   if (!config.llm.apiKey) console.log('\n  ⚠ Chưa có LLM_API_KEY trong .env — tính năng gợi ý trả lời sẽ không hoạt động.');
   console.log('');
 });
