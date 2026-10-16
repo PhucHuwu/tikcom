@@ -68,5 +68,16 @@ src/
   tts.ts      Google TTS (có cache)
   db.ts       SQLite: cài đặt, buổi live, sự kiện
   stats.ts    Thống kê realtime
-public/       Giao diện web (HTML/CSS/JS thuần, không cần build)
+web/          Giao diện: React 19 + Vite + Tailwind CSS v4 + Zustand
+  src/components, src/views, src/lib (store, WebSocket, âm thanh)
+dist/web/     Bản build giao diện (tạo bởi `npm run build`)
 ```
+
+## Lệnh
+
+| Lệnh | Ý nghĩa |
+|---|---|
+| `npm start` | Build giao diện rồi chạy server (dùng khi live) |
+| `npm run serve` | Chạy server với bản build có sẵn |
+| `npm run dev` | Phát triển: server tự khởi động lại + Vite hot reload tại `http://localhost:5173` |
+| `npm run typecheck` | Kiểm tra kiểu cho cả backend và frontend |
