@@ -58,7 +58,7 @@ cp .env.example .env   # rồi điền các giá trị
 npm start
 ```
 
-Terminal in ra địa chỉ `http://localhost:3000` và `http://<IP-máy>:3000` để mở từ thiết bị khác cùng Wi-Fi. Không đặt `DATABASE_URL` thì lịch sử lưu vào SQLite.
+Terminal in ra địa chỉ `http://localhost:3000` và `http://<IP-máy>:3000` để mở từ thiết bị khác cùng Wi-Fi (chỉ khi chạy trên máy; bản deploy Vercel mở được từ bất kỳ mạng nào). Không đặt `DATABASE_URL` thì lịch sử lưu vào SQLite.
 
 ## Cách dùng khi livestream
 

@@ -42,6 +42,9 @@ function Field({ label, hint, children }: { label: ReactNode; hint?: ReactNode; 
 const inputCls =
   'h-11 w-full rounded-xl bg-ink-850 px-3.5 text-[15px] text-ink-50 ring-1 ring-inset ring-ink-700 outline-none placeholder:text-ink-500 focus:ring-2 focus:ring-brand-500';
 
+/** Đang mở qua localhost hoặc IP mạng nội bộ (chạy trên máy cá nhân), không phải bản deploy */
+const RUNNING_LOCALLY = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
+
 const sample = (lang: string) => ({ name: 'Minh Anh', count: '5', gift: lang === 'vi' ? 'bông hồng' : 'Rose' });
 
 function preview(template: string, vars: Record<string, string>) {
@@ -239,8 +242,16 @@ export function SettingsView() {
         <Panel>
           <PanelHeader title="Dùng trên điện thoại" icon={<DeviceMobile size={18} />} />
           <ol className="list-decimal space-y-1.5 py-4 pr-4 pl-9 text-sm leading-relaxed text-ink-300 marker:text-ink-500">
-            <li>Kết nối điện thoại hoặc iPad vào cùng Wi-Fi với máy tính.</li>
-            <li>Mở địa chỉ “Thiết bị cùng Wi-Fi” hiện trong cửa sổ terminal khi chạy TikCom.</li>
+            {RUNNING_LOCALLY ? (
+              <>
+                <li>Kết nối điện thoại hoặc iPad vào cùng Wi-Fi với máy tính đang chạy TikCom.</li>
+                <li>Mở địa chỉ “Thiết bị cùng Wi-Fi” hiện trong cửa sổ terminal.</li>
+              </>
+            ) : (
+              <li>
+                Mở <span className="font-medium text-ink-100">{location.host}</span> trên điện thoại hoặc iPad (dùng Wi-Fi hay 4G đều được) rồi đăng nhập.
+              </li>
+            )}
             <li>Safari: bấm Chia sẻ → Thêm vào Màn hình chính để mở như ứng dụng.</li>
             <li>Bấm “Bật âm thanh” một lần mỗi khi mở lại trang.</li>
           </ol>
