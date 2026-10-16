@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS, type EventRow, type SessionDetail, type SessionSummary, type Settings } from '../../shared/types.js';
+import { THANK_PRESETS } from '../../shared/thanks.js';
 import { getDriver } from './driver.js';
 
 /** Thiết bị đang ghi lịch sử không gửi gì trong khoảng này thì thiết bị khác được ghi thay */
@@ -42,6 +43,7 @@ function pickSettings(patch: Partial<Settings>): Partial<Settings> {
     const v = (patch as Record<string, unknown>)[k];
     if (v !== undefined && typeof v === typeof def) out[k] = typeof v === 'string' ? v.slice(0, 2000) : v;
   }
+  if (out.thankLang !== undefined && !THANK_PRESETS.some((p) => p.lang === out.thankLang)) delete out.thankLang;
   if (out.suggestMode !== undefined && out.suggestMode !== 'auto' && out.suggestMode !== 'manual') delete out.suggestMode;
   return out as Partial<Settings>;
 }

@@ -78,6 +78,8 @@ export interface LiveStatus {
 
 export interface Settings {
   suggestMode: 'auto' | 'manual';
+  /** Ngôn ngữ giọng đọc lời cảm ơn (mã Google TTS) */
+  thankLang: string;
   thankGifts: boolean;
   minDiamonds: number;
   giftTemplate: string;
@@ -90,6 +92,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   suggestMode: 'auto',
+  thankLang: 'vi',
   thankGifts: true,
   minDiamonds: 1,
   giftTemplate: 'Cảm ơn {name} đã tặng {count} {gift}!',

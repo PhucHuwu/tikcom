@@ -1,5 +1,6 @@
 import type { Analysis, ChatEvent, GiftEvent, LiveEvent, SocialEvent } from '@shared/types';
 import { StatsTracker } from '@shared/stats';
+import { thankPreset } from '@shared/thanks';
 import { normalizeUsername } from '@shared/types';
 import { toast } from 'sonner';
 import { api, errorMessage } from '../lib/api';
@@ -17,13 +18,13 @@ const VI_CHARS = /[ăâđêôơưàáảãạằắẳẵặầấẩẫậèé�
 const HAS_LETTER = /\p{L}/u;
 const ACTIVE_KEY = 'live-active';
 
-function cleanName(name: string) {
+function cleanName(name: string, fallback: string) {
   const cleaned = name
     .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\u200d\ufe0f]/gu, '')
     .replace(/[_.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return cleaned || 'bạn';
+  return cleaned || fallback;
 }
 
 export function fillTemplate(tpl: string, vars: Record<string, string | number>) {
@@ -159,8 +160,10 @@ class LiveEngine {
     this.history?.setCounters(this.stats.peakViewers, this.stats.totalLikes);
   }
 
-  private speak(text: string) {
-    enqueueSpeech(text, 'vi');
+  /** Đọc lời cảm ơn bằng ngôn ngữ đã chọn trong Cài đặt */
+  private thank(template: string, user: string, extra: Record<string, string | number> = {}) {
+    const preset = thankPreset(useApp.getState().settings?.thankLang ?? 'vi');
+    enqueueSpeech(fillTemplate(template, { name: cleanName(user, preset.friend), ...extra }), preset.lang);
   }
 
   private push(event: LiveEvent) {
@@ -219,7 +222,9 @@ class LiveEngine {
           diamonds: e.diamonds,
         });
         if (settings?.thankGifts && e.count * e.diamonds >= settings.minDiamonds) {
-          this.speak(fillTemplate(settings.giftTemplate, { name: cleanName(e.user.name), count: e.count, gift: e.giftNameVi }));
+          // Tên quà tiếng Việt chỉ hợp với câu tiếng Việt; ngôn ngữ khác dùng tên gốc (tiếng Anh)
+          const gift = settings.thankLang === 'vi' ? e.giftNameVi : e.giftName;
+          this.thank(settings.giftTemplate, e.user.name, { count: e.count, gift });
         }
         return;
       }
@@ -233,10 +238,10 @@ class LiveEngine {
           this.stats.join();
         } else if (e.kind === 'follow') {
           this.stats.follow();
-          if (settings?.thankFollows) this.speak(fillTemplate(settings.followTemplate, { name: cleanName(e.user.name) }));
+          if (settings?.thankFollows) this.thank(settings.followTemplate, e.user.name);
         } else {
           this.stats.share();
-          if (settings?.thankShares) this.speak(fillTemplate(settings.shareTemplate, { name: cleanName(e.user.name) }));
+          if (settings?.thankShares) this.thank(settings.shareTemplate, e.user.name);
         }
         return;
       }
