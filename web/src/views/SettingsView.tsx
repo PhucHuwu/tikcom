@@ -6,7 +6,7 @@ import { api, errorMessage } from '../lib/api';
 import { setVolume, speakNow, useAudio } from '../lib/audio';
 import { useApp } from '../lib/store';
 import type { Settings } from '../lib/types';
-import { isPresetTemplate, THANK_PRESETS, thankPreset } from '@shared/thanks';
+import { isPresetTemplate, TEMPLATE_VARS, templateFromDisplay, templateToDisplay, THANK_PRESETS, thankPreset, type TemplateVar } from '@shared/thanks';
 
 function useSettingsSaver() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,11 +42,11 @@ function Field({ label, hint, children }: { label: ReactNode; hint?: ReactNode; 
 const inputCls =
   'h-11 w-full rounded-xl bg-ink-850 px-3.5 text-[15px] text-ink-50 ring-1 ring-inset ring-ink-700 outline-none placeholder:text-ink-500 focus:ring-2 focus:ring-brand-500';
 
-function preview(template: string, vars: Record<string, string>) {
-  return template.replace(/\{(\w+)\}/g, (m, k: string) => vars[k] ?? m);
-}
-
 const sample = (lang: string) => ({ name: 'Minh Anh', count: '5', gift: lang === 'vi' ? 'bông hồng' : 'Rose' });
+
+function preview(template: string, vars: Record<string, string>) {
+  return templateFromDisplay(template).replace(/\{(\w+)\}/g, (m, k: string) => vars[k] ?? m);
+}
 
 function TemplateField({
   value,
@@ -59,37 +59,66 @@ function TemplateField({
   value: string;
   onChange: (v: string) => void;
   label: string;
-  vars: string[];
+  vars: TemplateVar[];
   disabled: boolean;
   lang: string;
 }) {
-  const [local, setLocal] = useState(value);
-  useEffect(() => setLocal(value), [value]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [local, setLocal] = useState(() => templateToDisplay(value));
+  useEffect(() => {
+    // Chỉ cập nhật khi giá trị đã lưu khác với đang gõ (vd: đổi ngôn ngữ), để không nhảy con trỏ
+    setLocal((cur) => (templateFromDisplay(cur) === value ? cur : templateToDisplay(value)));
+  }, [value]);
   const text = preview(local, sample(lang));
+
+  function update(next: string) {
+    setLocal(next);
+    onChange(templateFromDisplay(next));
+  }
+
+  /** Chèn biến vào đúng chỗ con trỏ đang đứng */
+  function insert(v: TemplateVar) {
+    const el = inputRef.current;
+    const token = `{${TEMPLATE_VARS[v].label}}`;
+    const start = el?.selectionStart ?? local.length;
+    const end = el?.selectionEnd ?? local.length;
+    const before = local.slice(0, start);
+    const after = local.slice(end);
+    const pad = before && !/\s$/.test(before) ? ' ' : '';
+    const padAfter = !/^[\s!?.,]/.test(after) ? ' ' : '';
+    update(before + pad + token + padAfter + after);
+    const caret = (before + pad + token + padAfter).length;
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(caret, caret);
+    });
+  }
 
   return (
     <div className={cx('pb-3 transition-opacity', disabled && 'pointer-events-none opacity-40')}>
       <span className="sr-only">{label}</span>
       <div className="flex gap-2">
-        <input
-          aria-label={label}
-          value={local}
-          onChange={(e) => {
-            setLocal(e.target.value);
-            onChange(e.target.value);
-          }}
-          className={inputCls}
-        />
+        <input ref={inputRef} aria-label={label} value={local} onChange={(e) => update(e.target.value)} className={inputCls} />
         <Button variant="secondary" size="lg" onClick={() => speakNow(`preview:${label}`, text, lang)} aria-label="Nghe thử" title="Nghe thử">
           <Play size={16} weight="fill" />
         </Button>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-ink-500">
-        Biến:
+        Bấm để chèn:
         {vars.map((v) => (
-          <code key={v} className="rounded bg-ink-800 px-1.5 py-0.5 font-mono text-ink-300">{`{${v}}`}</code>
+          <button
+            key={v}
+            type="button"
+            onClick={() => insert(v)}
+            title={`Chèn ${TEMPLATE_VARS[v].hint.toLowerCase()} vào câu`}
+            className="pressable rounded-md bg-ink-800 px-2 py-1 font-medium text-ink-200 ring-1 ring-inset ring-ink-700 hover:bg-ink-700"
+          >
+            + {TEMPLATE_VARS[v].hint}
+          </button>
         ))}
-        <span className="ml-1 truncate">→ “{text}”</span>
+      </div>
+      <div className="mt-1.5 text-xs text-ink-400">
+        Sẽ đọc: <span className="text-ink-200">“{text}”</span>
       </div>
     </div>
   );

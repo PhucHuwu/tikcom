@@ -1,6 +1,6 @@
 import type { Analysis, ChatEvent, GiftEvent, LiveEvent, SocialEvent } from '@shared/types';
 import { StatsTracker } from '@shared/stats';
-import { thankPreset } from '@shared/thanks';
+import { templateFromDisplay, thankPreset } from '@shared/thanks';
 import { normalizeUsername } from '@shared/types';
 import { toast } from 'sonner';
 import { api, errorMessage } from '../lib/api';
@@ -28,7 +28,7 @@ function cleanName(name: string, fallback: string) {
 }
 
 export function fillTemplate(tpl: string, vars: Record<string, string | number>) {
-  return tpl.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+  return templateFromDisplay(tpl).replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
 }
 
 /** Giới hạn số yêu cầu AI chạy song song khi comment dồn dập */

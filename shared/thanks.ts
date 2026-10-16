@@ -129,3 +129,44 @@ export const thankPreset = (lang: string) => THANK_PRESETS.find((p) => p.lang ==
 /** Mẫu câu đang là mặc định của một ngôn ngữ nào đó (chưa bị sửa tay) */
 export const isPresetTemplate = (kind: 'gift' | 'follow' | 'share', text: string) =>
   THANK_PRESETS.some((p) => p[kind] === text.trim());
+
+/** Biến trong câu cảm ơn: khóa lưu trong cài đặt → tên hiển thị tiếng Việt cho người dùng */
+export const TEMPLATE_VARS = {
+  name: { label: 'tên', hint: 'Tên người xem' },
+  count: { label: 'số lượng', hint: 'Số quà' },
+  gift: { label: 'quà', hint: 'Tên món quà' },
+} as const;
+
+export type TemplateVar = keyof typeof TEMPLATE_VARS;
+
+/** Cách gõ khác nhau vẫn hiểu được: có/không dấu, hoa/thường, gạch dưới */
+const ALIASES: Record<string, TemplateVar> = {
+  name: 'name',
+  'tên': 'name',
+  ten: 'name',
+  count: 'count',
+  'số lượng': 'count',
+  'so luong': 'count',
+  'số': 'count',
+  so: 'count',
+  gift: 'gift',
+  'quà': 'gift',
+  qua: 'gift',
+};
+
+const VAR_RE = /\{\s*([^{}]{1,20}?)\s*\}/g;
+const aliasKey = (raw: string) => ALIASES[raw.normalize('NFC').toLowerCase().replace(/[_\s]+/g, ' ')];
+
+/** {name} → {tên} để hiện trên giao diện */
+export const templateToDisplay = (tpl: string) =>
+  tpl.replace(VAR_RE, (m, raw: string) => {
+    const key = aliasKey(raw);
+    return key ? `{${TEMPLATE_VARS[key].label}}` : m;
+  });
+
+/** {tên} → {name} để lưu */
+export const templateFromDisplay = (tpl: string) =>
+  tpl.replace(VAR_RE, (m, raw: string) => {
+    const key = aliasKey(raw);
+    return key ? `{${key}}` : m;
+  });
