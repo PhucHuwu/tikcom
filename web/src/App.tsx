@@ -1,6 +1,5 @@
 import { ChartBar, ChatsCircle, ClockCounterClockwise, Gear } from '@phosphor-icons/react';
-import { Toaster } from 'sonner';
-import { ConnectForm, SoundButton, StatusPill } from './components/TopBar';
+import { ConnectForm, LogoutButton, SoundButton, StatusPill } from './components/TopBar';
 import { cx } from './components/ui';
 import { useApp, type Tab } from './lib/store';
 import { HistoryView } from './views/HistoryView';
@@ -17,7 +16,7 @@ const TABS: { id: Tab; label: string; icon: typeof ChatsCircle }[] = [
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex shrink-0 items-center gap-2.5">
       <img src="/icon.svg" alt="" className="size-8 rounded-[10px]" />
       <span className="text-[17px] font-bold tracking-tight">TikCom</span>
     </div>
@@ -28,7 +27,7 @@ function DesktopTabs() {
   const tab = useApp((s) => s.tab);
   const setTab = useApp((s) => s.setTab);
   return (
-    <nav className="hidden items-center gap-1 rounded-xl bg-ink-900 p-1 ring-1 ring-inset ring-ink-800 md:flex" aria-label="Điều hướng">
+    <nav className="hidden shrink-0 items-center gap-1 rounded-xl bg-ink-900 p-1 ring-1 ring-inset ring-ink-800 md:flex" aria-label="Điều hướng">
       {TABS.map((t) => (
         <button
           key={t.id}
@@ -86,8 +85,9 @@ export function App() {
               <ConnectForm />
             </div>
           </div>
-          <div className="ml-auto lg:ml-0">
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <SoundButton compact />
+            <LogoutButton />
           </div>
         </div>
       </header>
@@ -97,7 +97,6 @@ export function App() {
       </main>
 
       <MobileTabs />
-      <Toaster theme="dark" position="top-center" richColors closeButton toastOptions={{ className: 'font-sans' }} />
     </div>
   );
 }

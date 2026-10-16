@@ -1,5 +1,5 @@
-import { config } from './config.js';
-import type { Analysis, Suggestion } from './types.js';
+import type { Analysis, Suggestion } from '../shared/types.js';
+import { getConfig } from './config.js';
 
 const ANALYZE_PROMPT = `Bạn là trợ lý cho một streamer TikTok người Việt Nam, giúp họ trả lời comment của người xem nước ngoài trong lúc livestream. Streamer KHÔNG biết ngoại ngữ.
 
@@ -54,18 +54,24 @@ interface ChatMessage {
   content: string;
 }
 
+export const isLlmConfigured = () => {
+  const { baseUrl, apiKey } = getConfig().llm;
+  return Boolean(baseUrl && apiKey);
+};
+
 async function chat(messages: ChatMessage[], timeoutMs = 20000): Promise<string> {
-  if (!config.llm.baseUrl || !config.llm.apiKey) {
-    throw new Error('Chưa cấu hình LLM_BASE_URL / LLM_API_KEY trong file .env');
+  const llm = getConfig().llm;
+  if (!isLlmConfigured()) {
+    throw new Error('Máy chủ chưa cấu hình LLM_BASE_URL / LLM_API_KEY');
   }
-  const res = await fetch(`${config.llm.baseUrl}/chat/completions`, {
+  const res = await fetch(`${llm.baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.llm.apiKey}`,
+      Authorization: `Bearer ${llm.apiKey}`,
     },
     body: JSON.stringify({
-      model: config.llm.model,
+      model: llm.model,
       messages,
       temperature: 0.4,
       response_format: { type: 'json_object' },
@@ -103,7 +109,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     return await fn();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (/Chưa cấu hình|HTTP 4(0[0-4]|29)/.test(msg)) throw err;
+    if (/chưa cấu hình|HTTP 4(0[0-4]|29)/.test(msg)) throw err;
     return fn();
   }
 }
@@ -159,29 +165,4 @@ export async function translateReply(text: string, lang: string, langName = ''):
   );
   if (!s) throw new Error('LLM không trả về bản dịch');
   return s;
-}
-
-/** Giới hạn số request LLM chạy song song để không bị nghẽn khi comment dồn dập. */
-export class TaskLimiter {
-  private running = 0;
-  private queue: (() => void)[] = [];
-
-  constructor(private readonly limit: number) {}
-
-  get pending() {
-    return this.queue.length;
-  }
-
-  async run<T>(task: () => Promise<T>): Promise<T> {
-    if (this.running >= this.limit) {
-      await new Promise<void>((resolve) => this.queue.push(resolve));
-    }
-    this.running++;
-    try {
-      return await task();
-    } finally {
-      this.running--;
-      this.queue.shift()?.();
-    }
-  }
 }

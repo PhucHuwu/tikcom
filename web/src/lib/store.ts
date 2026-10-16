@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import { isManualPlaying } from './audio';
-import type { CustomReply, LiveEvent, LiveStats, LiveStatus, Settings } from './types';
+import type { Bootstrap, CustomReply, LiveEvent, LiveStats, LiveStatus, Settings } from './types';
 import { isForeign } from './types';
 
 const MAX_EVENTS = 400;
 
 export type Tab = 'live' | 'stats' | 'history' | 'settings';
-export type WsState = 'connecting' | 'open' | 'closed';
 
 interface Filters {
   foreignOnly: boolean;
@@ -22,9 +21,9 @@ function loadFilters(): Filters {
 }
 
 interface AppState {
-  ws: WsState;
   status: LiveStatus;
   settings: Settings | null;
+  features: Bootstrap['features'] | null;
   stats: LiveStats | null;
   lastUsername: string;
   events: LiveEvent[];
@@ -37,7 +36,7 @@ interface AppState {
   sheetOpen: boolean;
   customReplies: Record<string, CustomReply>;
 
-  init: (m: { status: LiveStatus; settings: Settings; events: LiveEvent[]; stats: LiveStats; lastUsername: string }) => void;
+  init: (b: Bootstrap) => void;
   upsertEvent: (e: LiveEvent) => void;
   clear: () => void;
   select: (id: string | null, manual?: boolean) => void;
@@ -46,9 +45,9 @@ interface AppState {
 }
 
 export const useApp = create<AppState>((set, get) => ({
-  ws: 'connecting',
   status: { state: 'idle', username: '', message: 'Chưa kết nối', roomId: '', demo: false },
   settings: null,
+  features: null,
   stats: null,
   lastUsername: '',
   events: [],
@@ -60,15 +59,7 @@ export const useApp = create<AppState>((set, get) => ({
   sheetOpen: false,
   customReplies: {},
 
-  init: (m) =>
-    set((s) => ({
-      status: m.status,
-      settings: m.settings,
-      stats: m.stats,
-      lastUsername: m.lastUsername,
-      events: m.events,
-      selectedId: m.events.some((e) => e.id === s.selectedId) ? s.selectedId : null,
-    })),
+  init: (b) => set({ settings: b.settings, features: b.features, lastUsername: b.lastUsername }),
 
   upsertEvent: (e) => {
     const s = get();
@@ -95,7 +86,7 @@ export const useApp = create<AppState>((set, get) => ({
     set({ events, selectedId });
   },
 
-  clear: () => set({ events: [], selectedId: null, customReplies: {}, sheetOpen: false }),
+  clear: () => set({ events: [], selectedId: null, customReplies: {}, sheetOpen: false, stats: null }),
 
   select: (id, manual = false) =>
     set((s) => ({

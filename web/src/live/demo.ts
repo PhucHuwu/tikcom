@@ -1,7 +1,6 @@
-import { EventEmitter } from 'node:events';
-import { giftNameVi } from './gifts.js';
-import type { LiveSource, SourceEvent } from './tiktok.js';
-import type { LiveUser } from './types.js';
+import { giftNameVi } from '@shared/gifts';
+import type { LiveUser } from '@shared/types';
+import type { LiveSource, SourceEvent, SourceHandlers, Timer } from './source';
 
 const USERS: LiveUser[] = [
   { id: 'd1', name: 'Emily 🌸' },
@@ -46,29 +45,30 @@ const GIFTS = [
 const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
 /** Nguồn dữ liệu giả lập để thử giao diện khi chưa livestream. */
-export class DemoSource extends EventEmitter implements LiveSource {
-  private timers: NodeJS.Timeout[] = [];
+export class DemoSource implements LiveSource {
+  private timers: Timer[] = [];
   private viewers = 120;
   private likes = 0;
   private commentIdx = 0;
 
+  constructor(private readonly on: SourceHandlers) {}
+
   async start() {
-    this.emit('status', { state: 'connected', message: 'Chế độ demo: dữ liệu giả lập', roomId: 'demo' });
+    this.on.status({ state: 'connected', message: 'Chế độ demo: dữ liệu giả lập', roomId: 'demo' });
     this.loop(() => this.chat(), 4000, 9000);
     this.loop(() => this.gift(), 12000, 25000);
     this.loop(() => this.social(), 6000, 14000);
     this.loop(() => this.counters(), 3000, 5000);
-    setTimeout(() => this.chat(), 500);
+    this.timers.push(setTimeout(() => this.chat(), 500));
   }
 
-  async stop() {
+  stop() {
     this.timers.forEach(clearTimeout);
     this.timers = [];
-    this.emit('status', { state: 'idle', message: 'Đã dừng demo' });
   }
 
   private out(e: SourceEvent) {
-    this.emit('event', e);
+    this.on.event(e);
   }
 
   private loop(fn: () => void, min: number, max: number) {

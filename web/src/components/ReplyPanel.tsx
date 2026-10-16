@@ -1,6 +1,7 @@
 import { ArrowsClockwise, Copy, Lightbulb, PaperPlaneRight, Play, SpeakerSimpleHigh, Stop, Translate, Warning, X } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { live } from '../live/engine';
 import { api, errorMessage } from '../lib/api';
 import { speakNow, useAudio } from '../lib/audio';
 import { fmtTime, langName } from '../lib/format';
@@ -192,7 +193,7 @@ function ReanalyzeButton({ e }: { e: ChatEvent }) {
       variant="ghost"
       onClick={() => {
         markManual();
-        api(`/api/analyze/${encodeURIComponent(e.id)}?force=1`, { method: 'POST' }).catch((err) => toast.error(errorMessage(err)));
+        live.analyze(e.id, true).catch((err) => toast.error(errorMessage(err)));
       }}
     >
       <ArrowsClockwise size={14} weight="bold" />
@@ -216,7 +217,7 @@ export function ReplyPanel({ onClose }: { onClose?: () => void }) {
     const needs = a.status === 'none' || (a.status === 'skipped' && !a.result && /\p{L}/u.test(chat.text));
     if (needs && requested.current !== chat.id) {
       requested.current = chat.id;
-      api(`/api/analyze/${encodeURIComponent(chat.id)}`, { method: 'POST' }).catch((err) => toast.error(errorMessage(err)));
+      live.analyze(chat.id).catch((err) => toast.error(errorMessage(err)));
     }
   }, [chat]);
 

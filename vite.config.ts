@@ -9,7 +9,7 @@ export default defineConfig({
   root: 'web',
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { '@shared': fileURLToPath(new URL('./src', import.meta.url)) },
+    alias: { '@shared': fileURLToPath(new URL('./shared', import.meta.url)) },
   },
   build: {
     outDir: '../dist/web',
@@ -20,7 +20,6 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': backend,
-      '/ws': { target: backend.replace('http', 'ws'), ws: true },
     },
   },
 });

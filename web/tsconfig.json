@@ -10,8 +10,8 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "@shared/*": ["../src/*"]
+      "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["src", "../src/types.ts", "../src/stats.ts"]
+  "include": ["src", "../shared"]
 }

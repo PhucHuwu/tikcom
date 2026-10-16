@@ -1,8 +1,10 @@
-import { Broadcast, Flask, Power, SpeakerHigh, SpeakerSlash } from '@phosphor-icons/react';
+import { Broadcast, Flask, Power, SignOut, SpeakerHigh, SpeakerSlash } from '@phosphor-icons/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { live } from '../live/engine';
 import { api, errorMessage } from '../lib/api';
 import { setEnabled, useAudio } from '../lib/audio';
+import { markLoggedOut, useAuth } from '../lib/auth';
 import { useApp } from '../lib/store';
 import { Button, cx } from './ui';
 
@@ -14,12 +16,14 @@ const STATE_STYLE: Record<string, { dot: string; label: string }> = {
   connected: { dot: 'bg-live', label: 'Đang live' },
 };
 
+/** Thông báo bình thường khi chưa kết nối; các thông báo khác (lỗi) vẫn hiện ra */
+const QUIET_IDLE = new Set(['Chưa kết nối', 'Đã ngắt kết nối']);
+
 export function StatusPill() {
   const status = useApp((s) => s.status);
-  const ws = useApp((s) => s.ws);
-  const state = ws === 'closed' ? 'reconnecting' : status.state;
+  const state = status.state;
   const style = STATE_STYLE[state] ?? STATE_STYLE.idle;
-  const message = ws === 'closed' ? 'Mất kết nối tới máy chủ TikCom, đang thử lại…' : status.message;
+  const message = status.message;
   const pulsing = state !== 'idle';
 
   return (
@@ -35,7 +39,9 @@ export function StatusPill() {
             <span className="truncate font-normal text-ink-400">{status.demo ? '· dữ liệu demo' : `· @${status.username}`}</span>
           ) : null}
         </div>
-        {state !== 'connected' && state !== 'idle' ? <div className="truncate text-xs text-ink-400">{message}</div> : null}
+        {state !== 'connected' && (state !== 'idle' || !QUIET_IDLE.has(message)) ? (
+          <div className="truncate text-xs text-ink-400">{message}</div>
+        ) : null}
       </div>
     </div>
   );
@@ -60,6 +66,30 @@ export function SoundButton({ compact = false }: { compact?: boolean }) {
     >
       {enabled ? <SpeakerHigh size={18} weight="fill" className={cx(playing && 'text-live')} /> : <SpeakerSlash size={18} weight="bold" />}
       <span className={cx(compact && 'hidden sm:inline')}>{enabled ? (queue ? `Đang đọc · chờ ${queue}` : 'Âm thanh bật') : 'Bật âm thanh'}</span>
+    </Button>
+  );
+}
+
+export function LogoutButton() {
+  const username = useAuth((s) => s.username);
+  const [busy, setBusy] = useState(false);
+
+  async function logout() {
+    if (live.active && !confirm('Đăng xuất sẽ ngắt kết nối buổi live trên thiết bị này. Tiếp tục?')) return;
+    setBusy(true);
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+    } catch {
+      /* vẫn đăng xuất phía giao diện */
+    }
+    setEnabled(false);
+    markLoggedOut();
+  }
+
+  return (
+    <Button variant="ghost" size="sm" onClick={logout} loading={busy} title={`Đang đăng nhập: ${username}. Bấm để đăng xuất`} aria-label="Đăng xuất">
+      {busy ? null : <SignOut size={18} weight="bold" />}
+      <span className="hidden xl:inline">Đăng xuất</span>
     </Button>
   );
 }
@@ -94,12 +124,12 @@ export function ConnectForm() {
       toast.warning('Nhập username TikTok của bạn', { description: 'Ví dụ: @tenkenh hoặc link tiktok.com/@tenkenh' });
       return;
     }
-    void run('live', () => api('/api/connect', { method: 'POST', body: { username: name } }));
+    void run('live', () => live.start(name, false));
   }
 
   if (active) {
     return (
-      <Button variant="danger" onClick={() => run('stop', () => api('/api/disconnect', { method: 'POST' }))} loading={busy === 'stop'}>
+      <Button variant="danger" onClick={() => run('stop', async () => live.stop())} loading={busy === 'stop'}>
         {busy === 'stop' ? null : <Power size={16} weight="bold" />}
         Ngắt kết nối
       </Button>
@@ -127,7 +157,7 @@ export function ConnectForm() {
       </Button>
       <Button
         variant="ghost"
-        onClick={() => run('demo', () => api('/api/connect', { method: 'POST', body: { demo: true } }))}
+        onClick={() => run('demo', () => live.start('demo', true))}
         loading={busy === 'demo'}
         title="Chạy dữ liệu giả lập để làm quen giao diện"
       >
