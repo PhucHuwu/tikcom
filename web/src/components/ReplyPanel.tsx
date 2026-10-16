@@ -52,10 +52,14 @@ function SuggestionCard({ s, index, lang, eventId }: { s: Suggestion; index: num
       style={{ animationDelay: typeof index === 'number' ? `${index * 60}ms` : undefined }}
     >
       <div className="mb-2 flex items-center gap-2">
-        <span className={cx('font-mono text-[11px] font-semibold tracking-wide', index === 'custom' ? 'text-foreign' : 'text-ink-500')}>
-          {index === 'custom' ? 'CÂU CỦA BẠN' : `GỢI Ý ${index + 1}`}
+        <span className={cx('text-xs font-semibold', index === 'custom' ? 'text-foreign' : 'text-ink-500')}>
+          {index === 'custom' ? 'Câu của bạn' : `Gợi ý ${index + 1}`}
         </span>
-        {typeof index === 'number' && index < 3 ? <Kbd>{index + 1}</Kbd> : null}
+        {typeof index === 'number' && index < 3 ? (
+          <span className="hidden lg:inline" title={`Bấm phím ${index + 1} để phát`}>
+            <Kbd>{index + 1}</Kbd>
+          </span>
+        ) : null}
         <div className="flex-1" />
         <button
           type="button"

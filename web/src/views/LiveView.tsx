@@ -17,10 +17,10 @@ function useNow(interval = 1000) {
 
 function Metric({ icon, value, label, className }: { icon: React.ReactNode; value: React.ReactNode; label: string; className?: string }) {
   return (
-    <div className={cx('flex min-w-0 items-center gap-2', className)} title={label}>
+    <div className={cx('flex shrink-0 items-center gap-2 whitespace-nowrap', className)} title={label}>
       <span className="text-ink-500">{icon}</span>
       <span className="font-mono text-sm font-semibold text-ink-100 tabular">{value}</span>
-      <span className="hidden truncate text-xs text-ink-500 xl:inline">{label}</span>
+      <span className="hidden text-xs text-ink-500 2xl:inline">{label}</span>
     </div>
   );
 }

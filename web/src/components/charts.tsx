@@ -19,7 +19,8 @@ export function TimelineChart({ points }: { points: TimelinePoint[] }) {
   const maxC = Math.max(...points.map((p) => p.comments), 1);
   const maxV = Math.max(...points.map((p) => p.viewers ?? 0), 1);
   const maxD = Math.max(...points.map((p) => p.diamonds), 1);
-  const bw = W / n;
+  // Ít dữ liệu thì giữ độ rộng cột cố định, tránh 1 cột phủ kín biểu đồ
+  const bw = W / Math.max(n, 30);
   const y = (v: number, max: number) => H - (v / max) * (H - top);
   const hasViewers = points.some((p) => p.viewers);
 

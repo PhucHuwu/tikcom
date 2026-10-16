@@ -54,7 +54,7 @@ export function SoundButton({ compact = false }: { compact?: boolean }) {
         setEnabled(!enabled);
         if (!enabled) toast.success('Đã bật âm thanh trên thiết bị này');
       }}
-      className={cx(!enabled && 'animate-pulse')}
+      className={cx(!enabled && 'ring-4 ring-brand-500/25')}
       aria-pressed={enabled}
       title={enabled ? 'Tắt giọng đọc trên thiết bị này' : 'Trình duyệt cần bạn bấm một lần để cho phép phát âm thanh'}
     >
